@@ -1,0 +1,16 @@
+# Weighted routing for blue/green deployments.
+# Weights are rewritten by `infrastructure/scripts/bluegreen-apply.sh`
+# which fills in BLUE_WEIGHT and GREEN_WEIGHT from the environment.
+#
+# This file is only consumed once at least one service is deployed in
+# both variants — earlier phases ship a single (blue) variant.
+
+http:
+  services:
+    history-bluegreen:
+      weighted:
+        services:
+          - name: history-blue
+            weight: 100
+          - name: history-green
+            weight: 0

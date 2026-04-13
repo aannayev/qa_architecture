@@ -1,0 +1,74 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  publish-images:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - service: history
+            context: ./services/history
+            file: ./services/history/Dockerfile
+          - service: physics
+            context: ./services/physics
+            file: ./services/physics/Dockerfile
+          - service: math
+            context: ./services/math
+            file: ./services/math/Dockerfile
+          - service: geography
+            context: ./services/geography
+            file: ./services/geography/Dockerfile
+          - service: ai-assistant
+            context: ./services/ai-assistant
+            file: ./services/ai-assistant/Dockerfile
+          - service: frontend
+            context: ./frontend
+            file: ./frontend/Dockerfile
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.file }}
+          push: true
+          tags: ghcr.io/${{ github.repository }}/${{ matrix.service }}:${{ github.ref_name }}
+
+  create-release:
+    needs: publish-images
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate release notes
+        id: notes
+        run: |
+          echo "body<<EOF" >> "$GITHUB_OUTPUT"
+          echo "Release ${{ github.ref_name }}" >> "$GITHUB_OUTPUT"
+          echo "" >> "$GITHUB_OUTPUT"
+          echo "- Published service images to GHCR." >> "$GITHUB_OUTPUT"
+          echo "- Includes history, physics, math, geography, ai-assistant, frontend." >> "$GITHUB_OUTPUT"
+          echo "EOF" >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          body: ${{ steps.notes.outputs.body }}

@@ -1,0 +1,32 @@
+http:
+  middlewares:
+    # Strip the /api prefix before forwarding to backends so services can
+    # serve /v1/... without knowing the external routing shape.
+    api-strip:
+      stripPrefixRegex:
+        regex: "^/api/[^/]+"
+
+    ai-strip:
+      stripPrefix:
+        prefixes:
+          - "/ai"
+
+    # Standard security headers for every HTTP response.
+    secure-headers:
+      headers:
+        frameDeny: true
+        contentTypeNosniff: true
+        browserXssFilter: true
+        referrerPolicy: strict-origin-when-cross-origin
+        stsSeconds: 31536000
+        stsIncludeSubdomains: true
+        customResponseHeaders:
+          X-Powered-By: ""
+          Server: ""
+
+    # Rate-limit guard on the AI assistant entrypoint (defense in depth;
+    # the service itself also enforces per-session limits).
+    ai-ratelimit:
+      rateLimit:
+        average: 30
+        burst: 60

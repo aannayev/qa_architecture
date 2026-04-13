@@ -1,0 +1,88 @@
+# -------------------- OS --------------------
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# -------------------- Editors --------------------
+.idea/
+.vscode/
+!.vscode/extensions.json
+!.vscode/settings.json.example
+*.swp
+*.swo
+*~
+
+# -------------------- Env / secrets --------------------
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+secrets/
+
+# -------------------- Python --------------------
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+coverage.xml
+htmlcov/
+.tox/
+.venv/
+venv/
+dist/
+build/
+
+# -------------------- Go --------------------
+/services/math/bin/
+/services/math/tmp/
+*.test
+*.out
+vendor/
+
+# -------------------- Java --------------------
+.gradle/
+build/
+out/
+*.class
+target/
+!**/src/**/target/
+.classpath
+.project
+.settings/
+
+# -------------------- Node / Frontend --------------------
+node_modules/
+.next/
+.nuxt/
+.turbo/
+.pnpm-store/
+dist/
+.vite/
+playwright-report/
+test-results/
+coverage/
+.eslintcache
+
+# -------------------- Docker --------------------
+docker-compose.override.yml
+
+# -------------------- Observability --------------------
+infrastructure/docker/grafana/data/
+infrastructure/docker/prometheus/data/
+infrastructure/docker/tempo/data/
+infrastructure/docker/loki/data/
+
+# -------------------- CI artifacts --------------------
+.artifacts/
+*.sarif
+*.sbom.json
+
+# -------------------- Generated --------------------
+frontend/src/shared/api/generated/
+services/math/internal/repository/sqlc/
+specs/proto/gen/

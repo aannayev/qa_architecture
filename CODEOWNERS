@@ -1,0 +1,31 @@
+# ──────────────────────────────────────────────────────────────
+# CODEOWNERS — mandatory review matrix.
+# Replace @owner with actual GitHub usernames before use.
+# ──────────────────────────────────────────────────────────────
+
+*                                       @owner
+
+/services/history/                      @owner
+/services/physics/                      @owner
+/services/math/                         @owner
+/services/geography/                    @owner
+/services/exam-orchestrator/            @owner
+/services/ai-assistant/                 @owner
+
+/frontend/                              @owner
+/gateway/                               @owner
+/infrastructure/                        @owner
+
+# Prompts and AI automation require explicit review.
+/docs/ai/prompts/                       @owner
+/tools/ai/                              @owner
+/.github/workflows/ai-*.yml             @owner
+
+# CI quality gates and security workflows.
+/.github/workflows/ci.yml               @owner
+/.github/workflows/quality-gates.yml    @owner
+/.github/workflows/security.yml         @owner
+/.github/workflows/release.yml          @owner
+
+# Architecture decisions.
+/docs/architecture/adr/                 @owner

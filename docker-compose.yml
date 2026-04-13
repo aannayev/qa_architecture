@@ -1,0 +1,243 @@
+name: qa-architect
+
+# ──────────────────────────────────────────────────────────────
+# Core stack — brought up by `make up`.
+# Observability lives in docker-compose.observability.yml.
+# Chaos tools live in docker-compose.chaos.yml.
+# ──────────────────────────────────────────────────────────────
+
+x-defaults: &defaults
+  restart: unless-stopped
+  networks:
+    - qa-net
+
+x-env-otel: &env-otel
+  OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://otel-collector:4317}
+  OTEL_EXPORTER_OTLP_PROTOCOL: grpc
+  OTEL_TRACES_SAMPLER: parentbased_traceidratio
+  OTEL_TRACES_SAMPLER_ARG: "1.0"
+
+networks:
+  qa-net:
+    driver: bridge
+
+volumes:
+  postgres-data:
+  redis-data:
+  unleash-data:
+
+services:
+  # ──────────────────────────────────────────────────────
+  # Gateway
+  # ──────────────────────────────────────────────────────
+  traefik:
+    <<: *defaults
+    image: traefik:v3.1
+    command:
+      - "--configFile=/etc/traefik/traefik.yml"
+    ports:
+      - "${TRAEFIK_HTTP_PORT:-80}:80"
+      - "${TRAEFIK_DASHBOARD_PORT:-8080}:8080"
+    volumes:
+      - ./gateway/traefik.yml:/etc/traefik/traefik.yml:ro
+      - ./gateway/dynamic:/etc/traefik/dynamic:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8080/ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  # ──────────────────────────────────────────────────────
+  # Shared datastores
+  # ──────────────────────────────────────────────────────
+  postgres:
+    <<: *defaults
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_SUPER_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_SUPER_PASSWORD:-postgres}
+      POSTGRES_DB: postgres
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./infrastructure/docker/postgres/init:/docker-entrypoint-initdb.d:ro
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_SUPER_USER:-postgres}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    <<: *defaults
+    image: redis:7-alpine
+    volumes:
+      - redis-data:/data
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # ──────────────────────────────────────────────────────
+  # Feature flags
+  # ──────────────────────────────────────────────────────
+  unleash:
+    <<: *defaults
+    image: unleashorg/unleash-server:6.1
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://${UNLEASH_DB_USER:-unleash}:${UNLEASH_DB_PASSWORD:-unleash}@postgres:5432/${UNLEASH_DB_NAME:-unleash}
+      DATABASE_SSL: "false"
+      INIT_ADMIN_API_TOKENS: ${UNLEASH_ADMIN_TOKEN:-*:*.unleash-insecure-admin-token}
+      INIT_CLIENT_API_TOKENS: ${UNLEASH_API_TOKEN:-default:development.unleash-insecure-api-token}
+      LOG_LEVEL: warn
+    ports:
+      - "${UNLEASH_PORT:-4242}:4242"
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:4242/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+
+  # ──────────────────────────────────────────────────────
+  # Application services (placeholders; each is filled in
+  # during later phases and will register with Traefik via
+  # labels or dynamic config).
+  # ──────────────────────────────────────────────────────
+  history:
+    <<: *defaults
+    build:
+      context: ./services/history
+      dockerfile: Dockerfile
+    environment:
+      <<: *env-otel
+      OTEL_SERVICE_NAME: ${OTEL_SERVICE_NAME_HISTORY:-history-service}
+      DATABASE_URL: postgresql+asyncpg://${HISTORY_DB_USER:-history}:${HISTORY_DB_PASSWORD:-history}@postgres:5432/${HISTORY_DB_NAME:-history}
+      REDIS_URL: redis://redis:6379/0
+      UNLEASH_URL: ${UNLEASH_URL:-http://unleash:4242/api}
+      UNLEASH_API_TOKEN: ${UNLEASH_API_TOKEN:-default:development.unleash-insecure-api-token}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.history.rule=PathPrefix(`/api/history`)"
+      - "traefik.http.routers.history.middlewares=api-strip@file"
+      - "traefik.http.services.history.loadbalancer.server.port=8000"
+    profiles: ["services"]
+
+  physics:
+    <<: *defaults
+    build:
+      context: ./services/physics
+      dockerfile: Dockerfile
+    environment:
+      <<: *env-otel
+      OTEL_SERVICE_NAME: ${OTEL_SERVICE_NAME_PHYSICS:-physics-service}
+      DATABASE_URL: postgresql+asyncpg://${PHYSICS_DB_USER:-physics}:${PHYSICS_DB_PASSWORD:-physics}@postgres:5432/${PHYSICS_DB_NAME:-physics}
+      REDIS_URL: redis://redis:6379/0
+      UNLEASH_URL: ${UNLEASH_URL:-http://unleash:4242/api}
+      UNLEASH_API_TOKEN: ${UNLEASH_API_TOKEN:-default:development.unleash-insecure-api-token}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.physics.rule=PathPrefix(`/api/physics`)"
+      - "traefik.http.routers.physics.middlewares=api-strip@file"
+      - "traefik.http.services.physics.loadbalancer.server.port=8000"
+    profiles: ["services"]
+
+  math:
+    <<: *defaults
+    build:
+      context: ./services/math
+      dockerfile: Dockerfile
+    environment:
+      <<: *env-otel
+      OTEL_SERVICE_NAME: ${OTEL_SERVICE_NAME_MATH:-math-service}
+      DATABASE_URL: postgresql://${MATH_DB_USER:-math}:${MATH_DB_PASSWORD:-math}@postgres:5432/${MATH_DB_NAME:-math}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      PORT: 8000
+    depends_on:
+      postgres:
+        condition: service_healthy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.math.rule=PathPrefix(`/api/math`)"
+      - "traefik.http.routers.math.middlewares=api-strip@file"
+      - "traefik.http.services.math.loadbalancer.server.port=8000"
+    profiles: ["services"]
+
+  geography:
+    <<: *defaults
+    build:
+      context: ./services/geography
+      dockerfile: Dockerfile
+    environment:
+      <<: *env-otel
+      OTEL_SERVICE_NAME: ${OTEL_SERVICE_NAME_GEOGRAPHY:-geography-service}
+      DATABASE_URL: postgresql://${GEOGRAPHY_DB_USER:-geography}:${GEOGRAPHY_DB_PASSWORD:-geography}@postgres:5432/${GEOGRAPHY_DB_NAME:-geography}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.geography.rule=PathPrefix(`/api/geography`)"
+      - "traefik.http.routers.geography.middlewares=api-strip@file"
+      - "traefik.http.services.geography.loadbalancer.server.port=8000"
+    profiles: ["services"]
+
+  frontend:
+    <<: *defaults
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    environment:
+      VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost/api}
+      VITE_AI_WS_URL: ${VITE_AI_WS_URL:-ws://localhost/ai/v1/assist}
+    depends_on:
+      traefik:
+        condition: service_healthy
+    ports:
+      - "${FRONTEND_PORT:-3000}:3000"
+    profiles: ["services"]
+
+  ai-assistant:
+    <<: *defaults
+    build:
+      context: ./services/ai-assistant
+      dockerfile: Dockerfile
+    environment:
+      <<: *env-otel
+      OTEL_SERVICE_NAME: ${OTEL_SERVICE_NAME_AI:-ai-assistant}
+      LLM_PROVIDER: ${LLM_PROVIDER:-mock}
+      AI_RATE_LIMIT_PER_SESSION: ${AI_RATE_LIMIT_PER_SESSION:-20}
+      AI_RATE_LIMIT_PER_MINUTE: ${AI_RATE_LIMIT_PER_MINUTE:-5}
+    depends_on:
+      redis:
+        condition: service_healthy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.ai.rule=PathPrefix(`/ai`)"
+      - "traefik.http.routers.ai.middlewares=ai-strip@file"
+      - "traefik.http.routers.ai.service=ai"
+      - "traefik.http.services.ai.loadbalancer.server.port=8000"
+    profiles: ["services"]
+
+  # Additional services (math, geography, orchestrator,
+  # ai-assistant, frontend) are declared in later phases. Their
+  # Dockerfiles must exist before they can be brought up.
