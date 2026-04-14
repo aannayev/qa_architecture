@@ -98,20 +98,80 @@ jobs:
       - name: Build
         run: npm run build
 
+  e2e-frontend:
+    name: E2E Frontend (Playwright)
+    runs-on: ubuntu-latest
+    needs:
+      - quality-python
+      - quality-go
+      - quality-java
+      - quality-frontend
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: frontend/package.json
+
+      - name: Install frontend deps
+        run: npm install
+        working-directory: frontend
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+        working-directory: frontend
+
+      - name: Start stack
+        run: docker compose --profile services up -d --build
+
+      - name: Wait for healthy services
+        run: bash ./infrastructure/scripts/wait-for-healthy.sh
+
+      - name: Run smoke checks
+        run: bash ./infrastructure/scripts/smoke.sh
+
+      - name: Run frontend e2e
+        run: npm run test:e2e
+        working-directory: frontend
+
+      - name: Dump compose logs on failure
+        if: failure()
+        run: docker compose logs --tail=200
+
+      - name: Shutdown stack
+        if: always()
+        run: docker compose --profile services down -v --remove-orphans
+
   docker-build:
     name: Docker Build (${{ matrix.service }})
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        service: [history, physics, math, geography, ai-assistant, frontend]
+        include:
+          - service: history
+            context: ./services/history
+          - service: physics
+            context: ./services/physics
+          - service: math
+            context: ./services/math
+          - service: geography
+            context: ./services/geography
+          - service: ai-assistant
+            context: ./services/ai-assistant
+          - service: frontend
+            context: ./frontend
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
       - name: Build image
-        run: docker build -t qa-architect/${{ matrix.service }}:ci ./services/${{ matrix.service }}
+        run: docker build -t qa-architect/${{ matrix.service }}:ci ${{ matrix.context }}
 
   compose-validate:
     name: Compose Validate
