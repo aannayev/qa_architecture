@@ -14,6 +14,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/v1")
+@CrossOrigin(origins = "*")
 public class QuestionController {
     private final QuestionService questionService;
 

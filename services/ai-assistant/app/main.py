@@ -5,8 +5,17 @@ import time
 from collections import defaultdict
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(title="AI Assistant Service", version="0.1.0")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 PER_SESSION_LIMIT = int(os.getenv("AI_RATE_LIMIT_PER_SESSION", "20"))
 PER_MINUTE_LIMIT = int(os.getenv("AI_RATE_LIMIT_PER_MINUTE", "5"))
