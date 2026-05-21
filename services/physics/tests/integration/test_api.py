@@ -6,7 +6,7 @@ from app.domain.repository import QuestionRepository
 from app.domain.seed import build_seed_questions
 
 
-@pytest_asyncio.fixture(loop_scope="session")
+@pytest_asyncio.fixture
 async def seeded(session):
     repo = QuestionRepository(session)
     await repo.upsert_many(build_seed_questions())

@@ -20,6 +20,10 @@ from app.db import Base, get_session
 
 @pytest.fixture(scope="session")
 def postgres_url() -> Iterator[str]:
+    if test_url := os.environ.get("TEST_DATABASE_URL"):
+        yield test_url
+        return
+
     from testcontainers.postgres import PostgresContainer
 
     container = PostgresContainer(
@@ -34,7 +38,7 @@ def postgres_url() -> Iterator[str]:
         container.stop()
 
 
-@pytest_asyncio.fixture(scope="session", loop_scope="session")
+@pytest_asyncio.fixture
 async def engine(postgres_url: str):
     eng = create_async_engine(postgres_url, future=True)
     async with eng.begin() as conn:
@@ -43,7 +47,7 @@ async def engine(postgres_url: str):
     await eng.dispose()
 
 
-@pytest_asyncio.fixture(loop_scope="session")
+@pytest_asyncio.fixture
 async def session(engine) -> AsyncIterator[AsyncSession]:
     session_factory = async_sessionmaker(engine, expire_on_commit=False)
     async with session_factory() as s:
@@ -52,7 +56,7 @@ async def session(engine) -> AsyncIterator[AsyncSession]:
         await conn.execute(text("TRUNCATE TABLE questions RESTART IDENTITY CASCADE"))
 
 
-@pytest_asyncio.fixture(loop_scope="session")
+@pytest_asyncio.fixture
 async def client(engine) -> AsyncIterator[AsyncClient]:
     from app.main import create_app
 

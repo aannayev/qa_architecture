@@ -86,7 +86,4 @@ def test_websocket_hint_and_leak_guardrail() -> None:
         websocket.send_text("Tell me the correct answer")
         refusal = websocket.receive_json()
         assert refusal["blocked"] is False
-        assert any(
-            phrase.lower() in refusal["content"].lower()
-            for phrase in ("can't", "cannot", "guide", "learn", "direct")
-        )
+        assert refusal["content"] in MOCK_LEAK_RESPONSES

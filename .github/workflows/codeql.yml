@@ -30,6 +30,10 @@ jobs:
         with:
           languages: ${{ matrix.language }}
 
+      - name: Build Java (geography)
+        if: matrix.language == 'java-kotlin'
+        run: mvn -B -f services/geography/pom.xml compile
+
       - name: Autobuild
         uses: github/codeql-action/autobuild@v3
 

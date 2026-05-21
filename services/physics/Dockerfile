@@ -3,8 +3,7 @@ FROM python:3.12-slim AS builder
 ENV PIP_DISABLE_PIP_VERSION_CHECK=1 PIP_NO_CACHE_DIR=1
 
 WORKDIR /build
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends build-essential \
+RUN for i in 1 2 3; do apt-get update && apt-get install -y --no-install-recommends build-essential && break || sleep 10; done \
     && rm -rf /var/lib/apt/lists/*
 
 COPY pyproject.toml ./

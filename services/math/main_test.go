@@ -6,7 +6,17 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/go-chi/chi/v5"
 )
+
+func testRouter() http.Handler {
+	router := chi.NewRouter()
+	router.Get("/v1/questions", listQuestions)
+	router.Get("/v1/questions/{questionID}", getQuestion)
+	router.Post("/v1/questions/{questionID}/submit", submitAnswer)
+	return router
+}
 
 func TestSeedQuestionsNotEmpty(t *testing.T) {
 	if len(questions) == 0 {
@@ -17,7 +27,7 @@ func TestSeedQuestionsNotEmpty(t *testing.T) {
 func TestListQuestionsDoesNotExposeCorrectIndex(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "/v1/questions?limit=1", nil)
 	rec := httptest.NewRecorder()
-	listQuestions(rec, req)
+	testRouter().ServeHTTP(rec, req)
 
 	if rec.Code != http.StatusOK {
 		t.Fatalf("expected 200, got %d", rec.Code)
@@ -42,8 +52,7 @@ func TestSubmitCorrectAnswer(t *testing.T) {
 	body, _ := json.Marshal(submitRequest{SelectedIndex: q.CorrectIndex})
 	req := httptest.NewRequest(http.MethodPost, "/v1/questions/"+q.ID+"/submit", bytes.NewReader(body))
 	rec := httptest.NewRecorder()
-
-	submitAnswer(rec, req)
+	testRouter().ServeHTTP(rec, req)
 
 	if rec.Code != http.StatusOK {
 		t.Fatalf("expected 200, got %d body=%s", rec.Code, rec.Body.String())
@@ -66,8 +75,7 @@ func TestSubmitOutOfRangeReturns422(t *testing.T) {
 	body, _ := json.Marshal(submitRequest{SelectedIndex: len(q.Options) + 10})
 	req := httptest.NewRequest(http.MethodPost, "/v1/questions/"+q.ID+"/submit", bytes.NewReader(body))
 	rec := httptest.NewRecorder()
-
-	submitAnswer(rec, req)
+	testRouter().ServeHTTP(rec, req)
 
 	if rec.Code != http.StatusUnprocessableEntity {
 		t.Fatalf("expected 422, got %d body=%s", rec.Code, rec.Body.String())
@@ -77,8 +85,7 @@ func TestSubmitOutOfRangeReturns422(t *testing.T) {
 func TestGetQuestionNotFound(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "/v1/questions/00000000-0000-0000-0000-000000000000", nil)
 	rec := httptest.NewRecorder()
-
-	getQuestion(rec, req)
+	testRouter().ServeHTTP(rec, req)
 
 	if rec.Code != http.StatusNotFound {
 		t.Fatalf("expected 404, got %d", rec.Code)
