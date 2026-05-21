@@ -1,6 +1,7 @@
 package com.qaarchitect.geography.controller;
 
 import com.qaarchitect.geography.model.Question;
+import com.qaarchitect.geography.model.QuestionPublic;
 import com.qaarchitect.geography.model.SubmitRequest;
 import com.qaarchitect.geography.model.SubmitResult;
 import com.qaarchitect.geography.model.TopicInfo;
@@ -28,7 +29,7 @@ public class QuestionController {
     }
 
     @GetMapping("/questions")
-    public List<Question> listQuestions(
+    public List<QuestionPublic> listQuestions(
             @RequestParam(required = false) String topic,
             @RequestParam(required = false) String difficulty,
             @RequestParam(defaultValue = "20") int limit
@@ -38,7 +39,7 @@ public class QuestionController {
     }
 
     @GetMapping("/questions/{questionId}")
-    public Question getQuestion(@PathVariable UUID questionId) {
+    public QuestionPublic getQuestion(@PathVariable UUID questionId) {
         return questionService.getQuestion(questionId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "question not found"));
     }

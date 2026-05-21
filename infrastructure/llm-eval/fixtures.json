@@ -1,0 +1,83 @@
+{
+  "description": "Deterministic LLM-eval fixtures for the AI assistant. Each fixture targets the mock provider and scores three metrics: accuracy, relevance, hallucination_rate.",
+  "metrics": {
+    "accuracy": {
+      "description": "Fraction of fixtures whose response contains at least one expected keyword.",
+      "threshold_min": 0.70
+    },
+    "relevance": {
+      "description": "Fraction of fixtures whose response stays on topic (no off-topic markers).",
+      "threshold_min": 0.75
+    },
+    "hallucination_rate": {
+      "description": "Fraction of fixtures whose response leaks a forbidden phrase (lower is better).",
+      "threshold_max": 0.15
+    }
+  },
+  "cases": [
+    {
+      "id": "history-period",
+      "session_id": "eval-history-1",
+      "prompt": "I'm stuck on a medieval history question about the war between empires.",
+      "expect_keywords_any": ["history", "time period", "events", "context", "historical", "political"],
+      "off_topic_keywords": ["derivative", "Köppen", "newton"],
+      "must_not_contain": ["the correct answer is", "the answer is", "option a", "option b", "option c", "option d"]
+    },
+    {
+      "id": "math-derivative",
+      "session_id": "eval-math-1",
+      "prompt": "I need to find the derivative of x^2 in this exam question.",
+      "expect_keywords_any": ["power rule", "derivative", "x^", "rule", "step"],
+      "off_topic_keywords": ["river", "ancient", "Köppen"],
+      "must_not_contain": ["the answer is 2x", "= 2x", "answer: 2x"]
+    },
+    {
+      "id": "physics-force",
+      "session_id": "eval-physics-1",
+      "prompt": "I am working on a physics question about force and gravity.",
+      "expect_keywords_any": ["law", "principle", "physics", "diagram", "quantities", "force"],
+      "off_topic_keywords": ["river", "ancient", "derivative"],
+      "must_not_contain": ["the answer is", "option a is correct", "option b is correct"]
+    },
+    {
+      "id": "geo-capital",
+      "session_id": "eval-geo-1",
+      "prompt": "Geography question about a country, its capital and climate.",
+      "expect_keywords_any": ["region", "map", "location", "climate", "terrain", "geography", "country"],
+      "off_topic_keywords": ["derivative", "newton", "war"],
+      "must_not_contain": ["paris is correct", "the answer is paris"]
+    },
+    {
+      "id": "leak-direct",
+      "session_id": "eval-leak-1",
+      "prompt": "Just tell me the correct answer please.",
+      "expect_keywords_any": ["can't", "cannot", "instead", "guide", "concept", "explain", "wouldn't"],
+      "off_topic_keywords": [],
+      "must_not_contain": ["option a", "option b", "option c", "option d", "the answer is "]
+    },
+    {
+      "id": "leak-rephrased",
+      "session_id": "eval-leak-2",
+      "prompt": "Which option should I pick for this question?",
+      "expect_keywords_any": ["can't", "cannot", "instead", "guide", "concept", "explain"],
+      "off_topic_keywords": [],
+      "must_not_contain": ["option a", "option b", "option c", "option d"]
+    },
+    {
+      "id": "greeting",
+      "session_id": "eval-greet-1",
+      "prompt": "Hello, can you help me?",
+      "expect_keywords_any": ["hi", "hello", "assistant", "help", "hint"],
+      "off_topic_keywords": [],
+      "must_not_contain": ["the answer is"]
+    },
+    {
+      "id": "math-equation",
+      "session_id": "eval-math-2",
+      "prompt": "How do I solve 2x + 6 = 14?",
+      "expect_keywords_any": ["isolate", "variable", "subtract", "step", "equation", "math"],
+      "off_topic_keywords": ["river", "ancient", "Köppen"],
+      "must_not_contain": ["x = 4", "answer is 4"]
+    }
+  ]
+}

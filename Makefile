@@ -87,7 +87,7 @@ e2e: ## Playwright E2E against the compose stack
 	fi
 
 .PHONY: contract
-contract: ## Pact consumer + provider verification
+contract: ## Baseline API contract checks across subject services
 	@./infrastructure/scripts/run-contract.sh
 
 .PHONY: perf-smoke
@@ -105,7 +105,7 @@ chaos: up-chaos ## Run one chaos experiment (network latency)
 	@./tests/chaos/experiments/network-latency.sh
 
 .PHONY: llm-eval
-llm-eval: ## Run the DeepEval suite against the AI assistant
+llm-eval: ## Run offline LLM evaluation baseline for the AI assistant
 	@./infrastructure/scripts/run-llm-eval.sh
 
 .PHONY: smoke

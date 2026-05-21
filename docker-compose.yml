@@ -131,7 +131,7 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.history.rule=PathPrefix(`/api/history`)"
-      - "traefik.http.routers.history.middlewares=api-strip@file"
+      - "traefik.http.routers.history.middlewares=api-strip@file,secure-headers@file"
       - "traefik.http.services.history.loadbalancer.server.port=8000"
     profiles: ["services"]
 
@@ -156,7 +156,7 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.physics.rule=PathPrefix(`/api/physics`)"
-      - "traefik.http.routers.physics.middlewares=api-strip@file"
+      - "traefik.http.routers.physics.middlewares=api-strip@file,secure-headers@file"
       - "traefik.http.services.physics.loadbalancer.server.port=8000"
     profiles: ["services"]
 
@@ -177,7 +177,7 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.math.rule=PathPrefix(`/api/math`)"
-      - "traefik.http.routers.math.middlewares=api-strip@file"
+      - "traefik.http.routers.math.middlewares=api-strip@file,secure-headers@file"
       - "traefik.http.services.math.loadbalancer.server.port=8000"
     profiles: ["services"]
 
@@ -197,7 +197,7 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.geography.rule=PathPrefix(`/api/geography`)"
-      - "traefik.http.routers.geography.middlewares=api-strip@file"
+      - "traefik.http.routers.geography.middlewares=api-strip@file,secure-headers@file"
       - "traefik.http.services.geography.loadbalancer.server.port=8000"
     profiles: ["services"]
 
@@ -238,7 +238,7 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.ai.rule=PathPrefix(`/ai`)"
-      - "traefik.http.routers.ai.middlewares=ai-strip@file"
+      - "traefik.http.routers.ai.middlewares=ai-strip@file,ai-ratelimit@file,secure-headers@file"
       - "traefik.http.routers.ai.service=ai"
       - "traefik.http.services.ai.loadbalancer.server.port=8000"
     profiles: ["services"]

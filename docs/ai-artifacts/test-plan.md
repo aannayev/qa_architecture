@@ -106,10 +106,10 @@ Evaluated by `infrastructure/scripts/run-llm-eval.sh` using fixed offline fixtur
 ### 4.2 Evaluation Methodology
 
 **Current approach (offline baseline):**
-- 4 fixed test fixtures with pre-judged labels
+- Fixed evaluation cases in `services/ai-assistant/tests/test_llm_eval.py`
 - Script computes ratios: `metric = count_pass / total`
 - Deterministic — always produces the same result in CI
-- Validates the *framework* works, not real LLM quality
+- Validates mock-provider guardrails and hint quality, not a live LLM
 
 **Future approach (real LLM evaluation):**
 - Human-labeled test dataset (50+ question-answer pairs)

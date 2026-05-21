@@ -48,7 +48,7 @@ jobs:
           } > pr_context.txt
 
       - name: Install OpenAI SDK
-        run: python -m pip install --upgrade openai
+        run: python -m pip install "openai==1.51.0"
 
       - name: Generate AI advisory report
         env:

@@ -1,6 +1,7 @@
 package com.qaarchitect.geography.service;
 
 import com.qaarchitect.geography.model.Question;
+import com.qaarchitect.geography.model.QuestionPublic;
 import com.qaarchitect.geography.model.TopicInfo;
 import org.springframework.stereotype.Service;
 
@@ -50,7 +51,7 @@ public class QuestionService {
                 .toList();
     }
 
-    public List<Question> listQuestions(String topic, String difficulty, int limit) {
+    public List<QuestionPublic> listQuestions(String topic, String difficulty, int limit) {
         return questions.stream()
                 .filter(q -> topic == null || topic.isBlank() || q.topic().equals(topic))
                 .filter(q -> difficulty == null || difficulty.isBlank() || q.difficulty().equals(difficulty))
@@ -59,7 +60,7 @@ public class QuestionService {
                 .toList();
     }
 
-    public Optional<Question> getQuestion(UUID id) {
+    public Optional<QuestionPublic> getQuestion(UUID id) {
         return questions.stream().filter(q -> q.id().equals(id)).findFirst().map(this::publicView);
     }
 
@@ -67,7 +68,7 @@ public class QuestionService {
         return questions.stream().filter(q -> q.id().equals(id)).findFirst();
     }
 
-    private Question publicView(Question q) {
-        return new Question(q.id(), q.external_id(), q.topic(), q.difficulty(), q.prompt(), q.options(), -1, "");
+    private QuestionPublic publicView(Question q) {
+        return new QuestionPublic(q.id(), q.external_id(), q.topic(), q.difficulty(), q.prompt(), q.options());
     }
 }

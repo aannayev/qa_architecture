@@ -1,2 +1,35 @@
-x-chaos-note: "Placeholder: add Toxiproxy/Pumba services."
-services: {}
+# ──────────────────────────────────────────────────────────────
+# Chaos engineering stack scaffold.
+#
+# Adds Toxiproxy in front of Postgres so chaos scripts can inject
+# latency, bandwidth limits, and connection resets without taking the
+# whole stack down. Pumba can be plugged in here later for container-
+# level chaos. The existing tests/chaos/experiments/network-latency.sh
+# script targets the Traefik entrypoint by default, but with this
+# compose file you can switch to the Toxiproxy-fronted DB.
+#
+# IMPORTANT: this is a scaffold. The actual chaos scenarios are minimal
+# (single network-latency baseline). Production-grade chaos (Pumba kill
+# loops, ChaosMesh, Litmus, etc.) is out of scope for this iteration.
+# ──────────────────────────────────────────────────────────────
+
+services:
+  toxiproxy:
+    image: ghcr.io/shopify/toxiproxy:2.9.0
+    profiles: ["chaos"]
+    networks:
+      - qa-net
+    ports:
+      - "8474:8474"   # Toxiproxy admin API
+      - "15432:15432" # proxied Postgres
+    command:
+      - "-host=0.0.0.0"
+      - "-config=/config/toxiproxy.json"
+    volumes:
+      - ./infrastructure/docker/toxiproxy/config.json:/config/toxiproxy.json:ro
+    restart: unless-stopped
+
+networks:
+  qa-net:
+    external: true
+    name: qa-architect_qa-net

@@ -90,12 +90,12 @@ Low Likelihood   │ R10 → Critical          │ R7 → Medium
 
 | Tool | Command | What Is Tested |
 |------|---------|----------------|
-| Playwright (Chromium) | `make e2e` | Subject selection screen renders; exam flow for history |
+| Playwright (Chromium) | `make e2e` | Subject selection, full history exam flow, math load, AI hint + anti-leak guardrail |
 
 **Entry criteria:** Full compose stack running and healthy.
 **Exit criteria:** All Playwright scenarios pass.
 
-**Known gap:** Only the `history` subject has full E2E coverage. `physics`, `math`, and `geography` are covered by contract tests but not browser-level E2E.
+**Known gap:** `physics` and `geography` do not yet have dedicated browser-level E2E scenarios; they are covered by contract tests and partial frontend coverage via `math`.
 
 ### Level 5: Performance Tests
 
@@ -198,16 +198,16 @@ Low Likelihood   │ R10 → Critical          │ R7 → Medium
 |---------|:----:|:-----------:|:--------:|:---:|:----:|:-----:|:--------:|
 | history | ✅ | ✅ (Testcontainers) | ✅ | ✅ | ✅ | ✅ | — |
 | physics | ✅ | ✅ (Testcontainers) | ✅ | — | ✅ | — | — |
-| math | ✅ | — | ✅ | — | — | — | — |
+| math | ✅ | — | ✅ | ✅ (load via UI) | — | — | — |
 | geography | ✅ | — | ✅ | — | — | — | — |
-| ai-assistant | ✅ | — | — | — | — | — | ✅ |
+| ai-assistant | ✅ | — | — | — | — | — | ✅ (WebSocket + eval) |
 | frontend | — | — | — | ✅ (Playwright) | — | — | — |
 
 ### Coverage Gaps & Mitigation
 
 | Gap | Risk Level | Mitigation Plan |
 |-----|:----------:|----------------|
-| No E2E for physics/math/geography | Medium | Contract tests validate API; extend Playwright when resources allow |
+| No E2E for physics/geography | Medium | Contract tests validate API; extend Playwright when resources allow |
 | No integration tests for math/geography | Low | Services are stateless with hardcoded data; unit + contract tests sufficient |
 | No performance tests for math/geography | Low | Share same gateway; history perf tests cover gateway path |
 | No chaos tests for physics | Medium | Same architecture as history; extend chaos script to cover all Python services |

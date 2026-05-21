@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 import os
 import random
+import re
 import time
 from collections import defaultdict
 
@@ -105,77 +106,94 @@ MOCK_GENERAL_HINTS = [
 ]
 
 
+_WORD_RE = re.compile(r"[a-zA-Z][a-zA-Z'^/]*")
+
+
+def _tokens(message: str) -> set[str]:
+    """Tokenize a message into lowercase words for word-boundary matching.
+
+    Using word boundaries avoids false positives like ``"hi" in "history"`` —
+    each token is compared as a whole word against the keyword set.
+    """
+    return {match.group(0).lower() for match in _WORD_RE.finditer(message)}
+
+
+def _has_any(words: set[str], needles: tuple[str, ...]) -> bool:
+    return any(needle in words for needle in needles)
+
+
+# Subject keywords first so subject hints win over the generic greeting branch.
+# Order matters: more specific (e.g. derivative) precedes broader topics (math).
+_INTENTS: tuple[tuple[tuple[str, ...], str], ...] = (
+    (
+        ("derivative", "d/dx", "x^2", "x^3"),
+        "For derivatives, remember the power rule: d/dx(x^n) = n * x^(n-1). "
+        "Apply this rule to the expression and simplify. "
+        "What power is x raised to in this case?",
+    ),
+    (
+        ("pyramid", "egypt", "giza"),
+        "Think about ancient civilizations and where they were located geographically. "
+        "The Nile River valley was home to one of the most famous ancient civilizations. "
+        "Which modern country occupies that territory today?",
+    ),
+    (
+        ("degree", "triangle", "angle"),
+        "Remember the fundamental properties of geometric shapes. "
+        "For triangles, there's a well-known rule about the sum of interior angles. "
+        "Think about what that total is.",
+    ),
+    (
+        ("history", "ancient", "medieval", "revolution", "war", "century"),
+        "For history questions, try to place the event in its time period first. "
+        "Think about what was happening politically and socially at that time. "
+        "This context often narrows down the options significantly.",
+    ),
+    (
+        ("physics", "force", "energy", "velocity", "newton", "gravity", "wave"),
+        "For physics questions, identify the relevant physical law or principle first. "
+        "Think about which quantities are given and which you need to find. "
+        "Drawing a quick diagram can often make the solution clearer.",
+    ),
+    (
+        ("geo", "geography", "capital", "country", "continent", "river", "mountain", "climate"),
+        "For geography questions, think about the region's location and its characteristics. "
+        "Climate, terrain, and proximity to water bodies are often key factors. "
+        "Try to visualize the map in your mind.",
+    ),
+    (
+        ("math", "algebra", "equation", "formula", "solve", "calculate", "calculation"),
+        "For math problems, start by identifying what operation or formula is needed. "
+        "Write down what you know, then work through it step by step. "
+        "Check your answer by substituting it back into the original equation.",
+    ),
+)
+
+_GREETING_TOKENS = ("hello", "hi", "hey")
+_GRATITUDE_TOKENS = ("thank", "thanks", "thx")
+
+
 def _mock_response(message: str, session_id: str) -> str:
     if _is_leak_request(message):
         return random.choice(MOCK_LEAK_RESPONSES)
 
-    lowered = message.lower()
+    words = _tokens(message)
 
-    if any(w in lowered for w in ("hello", "hi", "hey", "help me", "help")):
+    # Subject intents take precedence over generic greetings to avoid the
+    # "hi inside history" substring trap.
+    for keywords, response in _INTENTS:
+        if _has_any(words, keywords):
+            return response
+
+    if _has_any(words, _GREETING_TOKENS) or "help me" in message.lower():
         return (
             "Hi! I'm your exam assistant. I can help you understand questions and "
             "think through the answers. Just describe what you're working on or paste "
             "the question, and I'll give you a helpful hint!"
         )
 
-    if any(w in lowered for w in ("thank", "thanks", "thx")):
+    if _has_any(words, _GRATITUDE_TOKENS):
         return "You're welcome! Keep going, you're doing great. Ask me if you need more help."
-
-    if any(w in lowered for w in ("history", "ancient", "medieval", "revolution", "war", "century")):
-        return (
-            "For history questions, try to place the event in its time period first. "
-            "Think about what was happening politically and socially at that time. "
-            "This context often narrows down the options significantly."
-        )
-
-    if any(w in lowered for w in ("math", "calcul", "algebra", "equation", "deriv", "formula", "x =", "solve")):
-        return (
-            "For math problems, start by identifying what operation or formula is needed. "
-            "Write down what you know, then work through it step by step. "
-            "Check your answer by substituting it back into the original equation."
-        )
-
-    if any(w in lowered for w in ("physics", "force", "energy", "velocity", "newton", "gravity", "wave")):
-        return (
-            "For physics questions, identify the relevant physical law or principle first. "
-            "Think about which quantities are given and which you need to find. "
-            "Drawing a quick diagram can often make the solution clearer."
-        )
-
-    if any(w in lowered for w in ("geo", "capital", "country", "continent", "river", "mountain", "climate")):
-        return (
-            "For geography questions, think about the region's location and its characteristics. "
-            "Climate, terrain, and proximity to water bodies are often key factors. "
-            "Try to visualize the map in your mind."
-        )
-
-    if any(w in lowered for w in ("degree", "triangle", "angle")):
-        return (
-            "Remember the fundamental properties of geometric shapes. "
-            "For triangles, there's a well-known rule about the sum of interior angles. "
-            "Think about what that total is."
-        )
-
-    if any(w in lowered for w in ("pyramid", "egypt", "giza")):
-        return (
-            "Think about ancient civilizations and where they were located geographically. "
-            "The Nile River valley was home to one of the most famous ancient civilizations. "
-            "Which modern country occupies that territory today?"
-        )
-
-    if any(w in lowered for w in ("derivative", "d/dx", "x^2", "x^3")):
-        return (
-            "For derivatives, remember the power rule: d/dx(x^n) = n * x^(n-1). "
-            "Apply this rule to the expression and simplify. "
-            "What power is x raised to in this case?"
-        )
-
-    if any(w in lowered for w in ("2x", "equation", "solve for x", "14")):
-        return (
-            "To solve a linear equation, isolate the variable on one side. "
-            "Move constants to the other side by doing the opposite operation. "
-            "What happens when you subtract the constant from both sides?"
-        )
 
     msg_idx = hash(message + session_id) % len(MOCK_GENERAL_HINTS)
     return MOCK_GENERAL_HINTS[msg_idx]

@@ -138,8 +138,8 @@ flowchart LR
 | Environment | Compose Profile | Purpose |
 |-------------|-----------------|---------|
 | **Development** | `--profile services` | Local development, all services + datastores |
-| **Observability** | `docker-compose.observability.yml` | Adds Prometheus, Grafana, Tempo, Loki |
-| **Chaos** | `docker-compose.chaos.yml` | Adds chaos engineering tooling |
+| **Observability** | `docker-compose.observability.yml` | Scaffold only — wire Prometheus/Grafana/Tempo/Loki when needed |
+| **Chaos** | `docker-compose.chaos.yml` | Scaffold only — extend with Toxiproxy/Pumba for injected faults |
 | **CI** | Compose-in-Docker | GitHub Actions — same compose stack for E2E |
 
 ### Blue/Green Deployment

@@ -1,2 +1,32 @@
-x-observability-note: "Placeholder: add Grafana/Prometheus/Tempo/Loki services."
-services: {}
+# ──────────────────────────────────────────────────────────────
+# Observability stack scaffold.
+#
+# NOTE: this file is intentionally minimal. The Python services
+# already emit OpenTelemetry traces to OTEL_EXPORTER_OTLP_ENDPOINT
+# (see docker-compose.yml). The full Prometheus/Grafana/Tempo/Loki
+# stack is planned but NOT shipped in this iteration of the test
+# assignment. See docs/architecture.md, Risks & Mitigations.
+#
+# To add it, declare prometheus, grafana, tempo, loki, otel-collector
+# services here and a shared `qa-net` network so they reuse the core
+# stack from docker-compose.yml.
+# ──────────────────────────────────────────────────────────────
+
+services:
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.108.0
+    profiles: ["observability"]
+    networks:
+      - qa-net
+    command: ["--config=/etc/otelcol-contrib/config.yaml"]
+    volumes:
+      - ./infrastructure/docker/otel/config.yaml:/etc/otelcol-contrib/config.yaml:ro
+    ports:
+      - "4317:4317"
+      - "4318:4318"
+    restart: unless-stopped
+
+networks:
+  qa-net:
+    external: true
+    name: qa-architect_qa-net

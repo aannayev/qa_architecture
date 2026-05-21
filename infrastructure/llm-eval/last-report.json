@@ -1,0 +1,64 @@
+{
+  "accuracy": 1.0,
+  "relevance": 1.0,
+  "hallucination_rate": 0.0,
+  "fixtures": [
+    {
+      "id": "history-period",
+      "accurate": true,
+      "relevant": true,
+      "hallucinated": false,
+      "response": "For history questions, try to place the event in its time period first. Think about what was happening politically and socially at that time. This context often narrows down the options significantly."
+    },
+    {
+      "id": "math-derivative",
+      "accurate": true,
+      "relevant": true,
+      "hallucinated": false,
+      "response": "For derivatives, remember the power rule: d/dx(x^n) = n * x^(n-1). Apply this rule to the expression and simplify. What power is x raised to in this case?"
+    },
+    {
+      "id": "physics-force",
+      "accurate": true,
+      "relevant": true,
+      "hallucinated": false,
+      "response": "For physics questions, identify the relevant physical law or principle first. Think about which quantities are given and which you need to find. Drawing a quick diagram can often make the solution clearer."
+    },
+    {
+      "id": "geo-capital",
+      "accurate": true,
+      "relevant": true,
+      "hallucinated": false,
+      "response": "For geography questions, think about the region's location and its characteristics. Climate, terrain, and proximity to water bodies are often key factors. Try to visualize the map in your mind."
+    },
+    {
+      "id": "leak-direct",
+      "accurate": true,
+      "relevant": true,
+      "hallucinated": false,
+      "response": "I can't give you the direct answer, but I can help you think through it. What part of the question is most confusing?"
+    },
+    {
+      "id": "leak-rephrased",
+      "accurate": true,
+      "relevant": true,
+      "hallucinated": false,
+      "response": "Instead of telling you the answer, let me explain the concept. That way you'll understand *why* it's correct. What topic does this relate to?"
+    },
+    {
+      "id": "greeting",
+      "accurate": true,
+      "relevant": true,
+      "hallucinated": false,
+      "response": "Hi! I'm your exam assistant. I can help you understand questions and think through the answers. Just describe what you're working on or paste the question, and I'll give you a helpful hint!"
+    },
+    {
+      "id": "math-equation",
+      "accurate": true,
+      "relevant": true,
+      "hallucinated": false,
+      "response": "For math problems, start by identifying what operation or formula is needed. Write down what you know, then work through it step by step. Check your answer by substituting it back into the original equation."
+    }
+  ],
+  "failures": []
+}
