@@ -109,9 +109,9 @@
 - Performance baseline (k6 smoke/load).
 - Chaos baseline сценарий.
 - LLM-eval baseline метрики:
-  - accuracy;
-  - relevance;
-  - hallucination_rate.
+  - accuracy ≥ 0.70;
+  - relevance ≥ 0.75;
+  - hallucination_rate ≤ 0.15.
 
 ### 4.3 CI/CD и Security
 

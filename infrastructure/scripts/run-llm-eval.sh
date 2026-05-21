@@ -17,8 +17,8 @@ echo "hallucination_rate=${hallucination_rate}"
 
 pass=true
 awk "BEGIN { exit !(${accuracy} >= 0.70) }" || pass=false
-awk "BEGIN { exit !(${relevance} >= 0.70) }" || pass=false
-awk "BEGIN { exit !(${hallucination_rate} <= 0.25) }" || pass=false
+awk "BEGIN { exit !(${relevance} >= 0.75) }" || pass=false
+awk "BEGIN { exit !(${hallucination_rate} <= 0.15) }" || pass=false
 
 if [[ "${pass}" != "true" ]]; then
   echo "LLM eval thresholds failed."
